@@ -1,7 +1,7 @@
 name: Auto Grading
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize]
     branches:
       - main
@@ -51,15 +51,23 @@ jobs:
           any_submission_changes=$(if [ -n "$all_changed_submission_files" ]; then echo 'true'; else echo 'false'; fi)
           echo "Any changes: $any_submission_changes"
           echo "any_submission_changes=$any_submission_changes" >> $GITHUB_OUTPUT
-
-          changed_files_push="$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }})"
-          for file in $changed_files_push; do
-            if [[ " $all_changed_submission_files " =~ " $file " ]]; then
-              echo "Valid changes in $file"
-              filter_changed_files_push+=( "$file" )
-            fi
-          done
-
+          
+          before_sha="${{ github.event.before }}" #! "${{ github.event.pull_request.base.sha }}" 
+          after_sha="${{ github.event.after }}"
+          if ! git rev-parse --verify "$before_sha" >/dev/null || ! git rev-parse --verify "$after_sha" >/dev/null || [ -z "${{ github.event.before }}" ] || [ -z "${{ github.event.after }}" ]; then
+            echo "One or both of the commit SHAs don't exist. Skipping git diff."
+            filter_changed_files_push=()
+          else
+            changed_files_push="$(git diff --name-only $before_sha $after_sha)"
+            filter_changed_files_push=()
+            for file in $changed_files_push; do
+              if [[ " $all_changed_submission_files " =~ " $file " ]]; then
+                echo "Valid changes in $file"
+                filter_changed_files_push+=( "$file" )
+              fi
+            done
+          fi
+          
           changed_submission_files_push=$(echo "${filter_changed_files_push[@]}" | xargs)
           echo "Filtered list of files changed in push: '$changed_submission_files_push'"
           echo "changed_submission_files_push=${changed_submission_files_push// /,}" >> $GITHUB_OUTPUT
@@ -87,12 +95,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      
-      # Generate variables using GitHub context
       - name: Generate variables using GitHub context
         id: get_variables
         run: |
-          assignment="fact-data-modeling" # $(basename "${{ github.event.repository.full_name }}")
+          assignment="fact-data-modeling" # ! $(basename "${{ github.event.repository.full_name }}")
           echo "Assignment: $assignment"
           echo "assignment_name=$assignment" >> $GITHUB_OUTPUT
           schema="$(echo "$(basename "${{ github.repository }}")" | tr '-' '_')_${{github.event.number}}_test"
@@ -120,15 +126,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      
-      # Add GitHub environment variables to '.env' file
       - name: Add GitHub environment variables to '.env' file
         run: env > .env
-      
-      # Build the Docker image
       - name: Build the Docker image
         run: docker build -t autograding .
-      
-      # Run the autograding application
       - name: Run the autograding application
         run: docker run --env-file .env --name autograding autograding
