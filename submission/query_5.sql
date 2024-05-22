@@ -13,3 +13,7 @@ create or replace table shababali.hosts_cumulated (
     host_activity_datelist array(date),
     date date
 )
+with(
+    format = 'PARQUET',
+    partitioning = array['date']
+    )

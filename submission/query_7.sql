@@ -13,3 +13,7 @@ create or replace table shababali.host_activity_reduced (
     metric_array array(integer),
     month_start varchar
 )
+with(
+    format = 'PARQUET',
+    partitioning = array['month_start']
+    )

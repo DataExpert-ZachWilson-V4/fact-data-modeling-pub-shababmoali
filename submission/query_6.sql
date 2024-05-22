@@ -2,10 +2,10 @@
 
 -- As shown in the fact data modeling day 2 lab, Write a query to incrementally populate the `hosts_cumulated` table from the `web_events` table.
 
-insert into shababali.hosts_cumulated
+insert into shabab.hosts_cumulated
 -- prev CTE from `hosts_cumulated`
 with yesterday as (
-    select * from shababali.hosts_cumulated where date = DATE('2022-05-01')
+    select * from shabab.hosts_cumulated where date = DATE('2022-05-01')
 ),
 -- curr CTE from `bootcamp.web_events` 
 today as (

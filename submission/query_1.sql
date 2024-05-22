@@ -8,12 +8,13 @@
 
 -- Note: re: logging -- thrift (like avro or protobuff) is very useful for establishing a logging schema
 
-with shababali.nba_game_details_dedup as (
-    select
-        *,
-        ROW_NUMBER() over (PARTITION BY game_id, team_id, player_id) as row_number,
-    from bootcamp.nba_game_details
-)
+with 
+    nba_game_details_dedup as (
+        select
+            *, ROW_NUMBER() over (PARTITION BY game_id, team_id, player_id) as row_number
+        from bootcamp.nba_game_details
+    )
+-- select all columns; keep only the first occurrence for duplicate records (rows)
 select *
-from bootcamp.nba_game_details_dedup
+from nba_game_details_dedup
 where row_number = 1

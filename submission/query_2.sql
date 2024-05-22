@@ -23,7 +23,7 @@
 -- Doing this by just including a `browser_type` column means it works almost exactly the same as what we did in lab, you just add an additional group by key.
 --
 -- The first index of the date list array should correspond to the most **recent** date (today's date).
-create or replace table shababali.user_devices_cumulated (
+create or replace table shabab.user_devices_cumulated (
     user_id bigint,
     browser_type varchar,
     dates_active array(date),
